@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  .font-inter {
+    font-family: Inter;
+  }
+  .font-inter-semibold {
+    font-family: InterSemiBold;
+  }
+  .font-inter-bold {
+    font-family: InterBold;
+  }
+  .font-mono-medium {
+    font-family: JetBrainsMono;
+  }
+  .font-mono-bold {
+    font-family: JetBrainsMonoBold;
+  }
+}

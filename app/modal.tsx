@@ -1,35 +1,36 @@
-import { StatusBar } from 'expo-status-bar';
-import { Platform, StyleSheet } from 'react-native';
-
-import EditScreenInfo from '@/components/EditScreenInfo';
-import { Text, View } from '@/components/Themed';
+/**
+ * Calibration Modal Screen
+ * Reads target from Zustand store and renders CalibrationModalContent.
+ */
+import React from 'react';
+import { View, Text } from 'react-native';
+import { useRouter } from 'expo-router';
+import { CalibrationModalContent } from '@/src/components/CalibrationModal';
+import { useAppStore } from '@/src/store/useAppStore';
 
 export default function ModalScreen() {
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Modal</Text>
-      <View style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />
-      <EditScreenInfo path="app/modal.tsx" />
+  const target = useAppStore((s) => s.calibrationTarget);
+  const closeCalibration = useAppStore((s) => s.closeCalibration);
+  const router = useRouter();
 
-      {/* Use a light status bar on iOS to account for the black space above the modal */}
-      <StatusBar style={Platform.OS === 'ios' ? 'light' : 'auto'} />
-    </View>
-  );
+  const handleComplete = () => {
+    router.back();
+    // Clear state after a short delay to ensure the modal animation finishes smoothly
+    setTimeout(() => closeCalibration(), 300);
+  };
+
+  const handleCancel = () => {
+    router.back();
+    setTimeout(() => closeCalibration(), 300);
+  };
+
+  if (!target) {
+    return (
+      <View className="flex-1 bg-zinc-50 dark:bg-zinc-950 justify-center items-center">
+        <Text className="text-zinc-400 dark:text-zinc-500 font-inter-medium text-base">No component selected</Text>
+      </View>
+    );
+  }
+
+  return <CalibrationModalContent onComplete={handleComplete} onCancel={handleCancel} />;
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  separator: {
-    marginVertical: 30,
-    height: 1,
-    width: '80%',
-  },
-});
