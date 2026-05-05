@@ -164,7 +164,7 @@ export default function DashboardScreen() {
         label="Total Monthly Outflow (Burn Rate)"
         value={formatCurrency(summary.totalMonthlyOutflow)}
         subtitle={`Expenses ${formatCurrency(summary.totalExpenses)} + Installments ${formatCurrency(summary.totalMonthlyLiabilities)}`}
-        status={summary.totalMonthlyOutflow > summary.totalIncome ? 'danger' : 'warning'}
+        status={summary.totalMonthlyOutflow > summary.totalIncome ? 'negative' : 'warning'}
       />
 
       <View className="flex-row space-x-4 mb-4">
