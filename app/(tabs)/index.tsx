@@ -160,6 +160,13 @@ export default function DashboardScreen() {
         status={getNetWorthStatus(summary.netWorth)}
       />
 
+      <RatioCard
+        label="Total Monthly Outflow (Burn Rate)"
+        value={formatCurrency(summary.totalMonthlyOutflow)}
+        subtitle={`Expenses ${formatCurrency(summary.totalExpenses)} + Installments ${formatCurrency(summary.totalMonthlyLiabilities)}`}
+        status={summary.totalMonthlyOutflow > summary.totalIncome ? 'danger' : 'warning'}
+      />
+
       <View className="flex-row space-x-4 mb-4">
         <View className="flex-1">
           <RatioCard
@@ -239,17 +246,38 @@ export default function DashboardScreen() {
         </View>
       ) : (
       grouped.map((group) => {
-      const totalForGroup = group.items.reduce((acc, comp) => {
-        const today = new Date().toISOString().split('T')[0];
-        const isActive = (!comp.active_from || comp.active_from <= today) && (!comp.active_until || comp.active_until >= today);
-        return isActive ? acc + comp.current_amount : acc;
-      }, 0);
+      let totalForGroup = 0;
+      if (group.type === 'asset') {
+        totalForGroup = group.items.reduce((acc, comp) => {
+          const today = new Date().toISOString().split('T')[0];
+          const isActive = (!comp.active_from || comp.active_from <= today) && (!comp.active_until || comp.active_until >= today);
+          return isActive ? acc + comp.current_amount : acc;
+        }, 0);
+      } else if (group.type === 'liability') {
+        totalForGroup = group.items.reduce((acc, comp) => {
+          const today = new Date().toISOString().split('T')[0];
+          const isActive = (!comp.active_from || comp.active_from <= today) && (!comp.active_until || comp.active_until >= today);
+          return isActive ? acc + comp.current_amount : acc;
+        }, 0);
+      } else if (group.type === 'income') {
+        totalForGroup = summary.totalIncome;
+      } else if (group.type === 'expense') {
+        totalForGroup = summary.totalExpenses;
+      }
+
+      const isMonthly = group.type === 'income' || group.type === 'expense';
 
       return (
         <View key={group.type} className="mb-6">
           <View className="flex-row justify-between items-center mb-2">
-            <Text className="text-sm font-inter-semibold text-zinc-500 dark:text-zinc-400">{group.label}</Text>
-            <Text className="text-[11px] font-mono-bold text-zinc-400 dark:text-zinc-500">{formatCurrency(totalForGroup)}</Text>
+            <Text className="text-[10px] font-inter-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest ml-1">
+              {group.label} {isMonthly ? '(Monthly)' : ''}
+            </Text>
+            <Text className={`text-sm font-mono-bold ${
+              group.type === 'expense' || group.type === 'liability' ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'
+            }`}>
+              {formatCurrency(totalForGroup)}
+            </Text>
           </View>
             {group.items.map((comp) => (
               <Pressable

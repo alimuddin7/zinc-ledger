@@ -35,6 +35,9 @@ export interface FinancialSummary {
   totalLiabilities: number;
   totalIncome: number;
   totalExpenses: number;
+  totalMonthlyAssets: number; // Monthly growth/interest
+  totalMonthlyLiabilities: number; // Monthly installments
+  totalMonthlyOutflow: number; // Expenses + Installments
   liquidAssets: number;
   shortTermLiabilities: number;
   educationReserve: number;
@@ -73,7 +76,8 @@ function computeSummary(components: ComponentWithBalance[]): FinancialSummary {
   let totalExpenses = 0;
   let liquidAssets = 0;
   let shortTermLiabilities = 0;
-  let monthlyDebtRepayments = 0;
+  let totalMonthlyAssets = 0;
+  let totalMonthlyLiabilities = 0;
 
   const now = new Date();
   const todayStr = now.toISOString().split('T')[0];
@@ -93,6 +97,10 @@ function computeSummary(components: ComponentWithBalance[]): FinancialSummary {
         if (comp.is_liquid) {
           liquidAssets += comp.current_amount;
         }
+        // Monthly growth (if rate is 5% annual, monthly is balance * 0.05 / 12)
+        if (comp.depreciation_rate !== 0) {
+          totalMonthlyAssets += (comp.current_amount * comp.depreciation_rate) / 12;
+        }
         break;
       case 'liability':
         totalLiabilities += comp.current_amount;
@@ -100,7 +108,7 @@ function computeSummary(components: ComponentWithBalance[]): FinancialSummary {
           shortTermLiabilities += comp.current_amount;
         }
         // Use monthly_installment for DSR, not the total balance
-        monthlyDebtRepayments += comp.monthly_installment;
+        totalMonthlyLiabilities += comp.monthly_installment;
         break;
       case 'income':
         totalIncome += monthlyAmount;
@@ -114,8 +122,9 @@ function computeSummary(components: ComponentWithBalance[]): FinancialSummary {
   const netWorth = totalAssets - totalLiabilities;
   const liquidNetWorth = liquidAssets - shortTermLiabilities;
   const savingsRate = totalIncome > 0 ? (totalIncome - totalExpenses) / totalIncome : 0;
-  const dsr = totalIncome > 0 ? monthlyDebtRepayments / totalIncome : 0;
+  const dsr = totalIncome > 0 ? totalMonthlyLiabilities / totalIncome : 0;
   const debtToAssetRatio = totalAssets > 0 ? totalLiabilities / totalAssets : 0;
+  const totalMonthlyOutflow = totalExpenses + totalMonthlyLiabilities;
 
   return {
     netWorth,
@@ -127,6 +136,9 @@ function computeSummary(components: ComponentWithBalance[]): FinancialSummary {
     totalLiabilities,
     totalIncome,
     totalExpenses,
+    totalMonthlyAssets,
+    totalMonthlyLiabilities,
+    totalMonthlyOutflow,
     liquidAssets,
     shortTermLiabilities,
     educationReserve: 0,
