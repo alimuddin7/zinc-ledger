@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "MyFinancialApp",
-    "slug": "MyFinancialApp",
+    "name": "Zinc Ledger",
+    "slug": "zinc-ledger",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "myfinancialapp",
+    "scheme": "zinc-ledger",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
@@ -22,7 +22,8 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.alimuddin7.zincledger"
     },
     "web": {
       "bundler": "metro",
@@ -35,6 +36,12 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "833cca08-a92e-4d91-a527-f7b5cfcc664c"
+      }
     }
   }
 }
