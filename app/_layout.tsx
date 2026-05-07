@@ -94,25 +94,29 @@ export default function RootLayout() {
   return <RootLayoutNav />;
 }
 
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
 
   return (
-    <DatabaseProvider>
-      <ThemeProvider value={colorScheme === 'dark' ? AppDarkTheme : AppLightTheme}>
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen
-            name="modal"
-            options={{
-              presentation: 'modal',
-              title: 'Calibrate',
-              headerStyle: { backgroundColor: '#030712' },
-              headerTintColor: '#f8fafc',
-            }}
-          />
-        </Stack>
-      </ThemeProvider>
-    </DatabaseProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <DatabaseProvider>
+        <ThemeProvider value={colorScheme === 'dark' ? AppDarkTheme : AppLightTheme}>
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen
+              name="modal"
+              options={{
+                presentation: 'modal',
+                title: 'Calibrate',
+                headerStyle: { backgroundColor: '#030712' },
+                headerTintColor: '#f8fafc',
+              }}
+            />
+          </Stack>
+        </ThemeProvider>
+      </DatabaseProvider>
+    </GestureHandlerRootView>
   );
 }

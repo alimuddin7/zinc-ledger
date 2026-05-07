@@ -1,37 +1,38 @@
 /**
  * ComponentForm — Add/edit financial components (categories).
- * Supports dynamic type, frequency, and liquidity selection.
+ * Purple FinTech design with adaptive Light/Dark mode.
  */
 import React, { useState } from 'react';
-import { View, Text, TextInput, Pressable, ScrollView } from 'react-native';
+import { View, Text, TextInput, Pressable, ScrollView, StatusBar, useColorScheme } from 'react-native';
 import { useSQLiteContext } from 'expo-sqlite';
-import type { ComponentType, FrequencyUnit, ComponentWithBalance } from '../database/schema';
+import { Calendar, Clock, Layers, Type } from 'lucide-react-native';
+import type { ComponentType, FrequencyUnit, FinancialComponent } from '../database/schema';
 
 interface ComponentFormProps {
-  editingComponent?: ComponentWithBalance | null;
+  editingComponent?: FinancialComponent | null;
   onComplete: () => void;
   onCancel: () => void;
 }
 
 const TYPES: { label: string; value: ComponentType }[] = [
-  { label: '💰 Asset', value: 'asset' },
-  { label: '💳 Liability', value: 'liability' },
-  { label: '📈 Income', value: 'income' },
-  { label: '📉 Expense', value: 'expense' },
+  { label: 'Asset', value: 'asset' },
+  { label: 'Liability', value: 'liability' },
+  { label: 'Income', value: 'income' },
+  { label: 'Expense', value: 'expense' },
 ];
 
 const TYPE_DESCRIPTIONS: Record<ComponentType, string> = {
-  asset: 'Harta yang Anda miliki (Tabungan, Emas, Mobil, Properti).',
-  liability: 'Hutang atau cicilan yang harus dilunasi (Kartu Kredit, KPR, Pinjol).',
-  income: 'Pendapatan rutin bulanan (Gaji, Passive Income, Hasil Usaha).',
-  expense: 'Pengeluaran rutin untuk kebutuhan hidup (Makan, Listrik, SPP).',
+  asset: 'Owned value (Savings, Gold, Car, Property).',
+  liability: 'Debts or installments (Credit Card, Mortgage, Loans).',
+  income: 'Recurring revenue (Salary, Passive Income).',
+  expense: 'Recurring outflows (Rent, Utilities, Food).',
 };
 
 const FREQUENCY_UNITS: { label: string; value: FrequencyUnit }[] = [
-  { label: 'Days', value: 'day' },
-  { label: 'Weeks', value: 'week' },
-  { label: 'Months', value: 'month' },
-  { label: 'Years', value: 'year' },
+  { label: 'D', value: 'day' },
+  { label: 'W', value: 'week' },
+  { label: 'M', value: 'month' },
+  { label: 'Y', value: 'year' },
 ];
 
 function formatDisplayNumber(text: string): string {
@@ -42,6 +43,8 @@ function formatDisplayNumber(text: string): string {
 
 export function ComponentForm({ editingComponent, onComplete, onCancel }: ComponentFormProps) {
   const db = useSQLiteContext();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
   const isEditing = !!editingComponent;
 
   const [name, setName] = useState(editingComponent?.name ?? '');
@@ -52,6 +55,7 @@ export function ComponentForm({ editingComponent, onComplete, onCancel }: Compon
   const [activeUntil, setActiveUntil] = useState(editingComponent?.active_until ?? '');
   const [isLiquid, setIsLiquid] = useState(editingComponent?.is_liquid === 1);
   const [isShortTerm, setIsShortTerm] = useState(editingComponent?.is_short_term === 1);
+  const [isEssential, setIsEssential] = useState(editingComponent?.is_essential === 1);
   const [depRate, setDepRate] = useState(editingComponent?.depreciation_rate?.toString() ?? '0');
   const [monthlyInstallment, setMonthlyInstallment] = useState(editingComponent ? formatDisplayNumber(editingComponent.monthly_installment.toString()) : '0');
   const [error, setError] = useState<string | null>(null);
@@ -72,15 +76,14 @@ export function ComponentForm({ editingComponent, onComplete, onCancel }: Compon
 
       if (isEditing && editingComponent) {
         await db.runAsync(
-          `UPDATE financial_components SET name = ?, type = ?, frequency_interval = ?, frequency_unit = ?, is_liquid = ?, is_short_term = ?, depreciation_rate = ?, monthly_installment = ?, active_from = ?, active_until = ? WHERE id = ?`,
-          [trimmed, type, interval, frequencyUnit, isLiquid ? 1 : 0, isShortTerm ? 1 : 0, rate, installment, fromDate, untilDate, editingComponent.id]
+          `UPDATE financial_components SET name = ?, type = ?, frequency_interval = ?, frequency_unit = ?, is_liquid = ?, is_short_term = ?, is_essential = ?, depreciation_rate = ?, monthly_installment = ?, active_from = ?, active_until = ? WHERE id = ?`,
+          [trimmed, type, interval, frequencyUnit, isLiquid ? 1 : 0, isShortTerm ? 1 : 0, isEssential ? 1 : 0, rate, installment, fromDate, untilDate, editingComponent.id]
         );
       } else {
         const result = await db.runAsync(
-          `INSERT INTO financial_components (name, type, frequency_interval, frequency_unit, is_liquid, is_short_term, depreciation_rate, monthly_installment, active_from, active_until) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [trimmed, type, interval, frequencyUnit, isLiquid ? 1 : 0, isShortTerm ? 1 : 0, rate, installment, fromDate, untilDate]
+          `INSERT INTO financial_components (name, type, frequency_interval, frequency_unit, is_liquid, is_short_term, is_essential, depreciation_rate, monthly_installment, active_from, active_until) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [trimmed, type, interval, frequencyUnit, isLiquid ? 1 : 0, isShortTerm ? 1 : 0, isEssential ? 1 : 0, rate, installment, fromDate, untilDate]
         );
-        // Create initial zero record
         await db.runAsync(
           `INSERT INTO financial_records (component_id, amount, start_date) VALUES (?, 0, datetime('now'))`,
           [result.lastInsertRowId]
@@ -92,180 +95,212 @@ export function ComponentForm({ editingComponent, onComplete, onCancel }: Compon
     }
   };
 
+  const SectionTitle = ({ icon: Icon, title }: { icon: any, title: string }) => (
+    <View className="flex-row items-center mb-4 mt-2">
+      <View className="w-8 h-8 rounded-lg bg-violet-100 dark:bg-violet-500/10 items-center justify-center">
+        <Icon size={16} color="#7c3aed" strokeWidth={2.5} />
+      </View>
+      <Text className="text-[11px] font-inter-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-[2px] ml-3">
+        {title}
+      </Text>
+    </View>
+  );
+
   return (
-    <ScrollView className="flex-1 bg-zinc-50 dark:bg-zinc-950 p-6">
-      <Text className="text-2xl font-inter-bold text-zinc-900 dark:text-zinc-50 mb-8">{isEditing ? 'Edit Component' : 'New Component'}</Text>
+    <View className="flex-1 bg-zinc-50 dark:bg-zinc-950">
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
+      
+      <ScrollView className="flex-1" contentContainerStyle={{ padding: 24, paddingBottom: 100 }}>
+        <Text className="text-3xl font-inter-bold text-zinc-900 dark:text-zinc-50 mb-1">{isEditing ? 'Edit Category' : 'New Category'}</Text>
+        <Text className="text-sm text-zinc-400 dark:text-zinc-500 mb-10 font-inter-medium">Configure your financial component details.</Text>
 
-      <View className="gap-y-6">
-        {/* Name */}
-        <View>
-          <Text className="text-[10px] font-inter-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2 ml-1">Name</Text>
-          <TextInput
-            className="bg-white dark:bg-zinc-900 rounded-2xl px-5 py-4 text-base text-zinc-900 dark:text-zinc-50 border border-zinc-200 dark:border-zinc-800"
-            value={name}
-            onChangeText={(t) => { setError(null); setName(t); }}
-            placeholder="e.g. Savings Account"
-            placeholderTextColor="#94a3b8"
-            autoFocus
-          />
-        </View>
-
-        {/* Type */}
-        <View>
-          <Text className="text-[10px] font-inter-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-3 ml-1">Component Type</Text>
-          <View className="flex-row flex-wrap gap-2">
-            {TYPES.map((t) => (
-              <Pressable
-                key={t.value}
-                className={`flex-[1_1_45%] min-w-[140px] px-4 py-3 rounded-xl border ${type === t.value ? 'bg-sky-50 dark:bg-sky-900/30 border-sky-600 dark:border-sky-400' : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800'}`}
-                onPress={() => setType(t.value)}
-              >
-                <Text className={`text-sm text-center ${type === t.value ? 'text-sky-600 dark:text-sky-400 font-inter-semibold' : 'text-zinc-500 dark:text-zinc-400'}`}>{t.label}</Text>
-              </Pressable>
-            ))}
-          </View>
-          <Text className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-3 ml-1 italic">
-            {TYPE_DESCRIPTIONS[type]}
-          </Text>
-        </View>
-
-        {/* Frequency - Only for Income and Expense */}
-        {(type === 'income' || type === 'expense') && (
+        <View className="space-y-10">
+          {/* Identity Section */}
           <View>
-            <Text className="text-[10px] font-inter-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-3 ml-1">Frequency</Text>
-            <View className="flex-row gap-4">
-              <View className="flex-1">
-                <TextInput
-                  className="bg-white dark:bg-zinc-900 rounded-2xl px-5 py-4 text-base text-zinc-900 dark:text-zinc-50 border border-zinc-200 dark:border-zinc-800 font-mono"
-                  value={frequencyInterval}
-                  onChangeText={setFrequencyInterval}
-                  keyboardType="numeric"
-                  placeholder="1"
-                  placeholderTextColor="#94a3b8"
-                />
-              </View>
-              <View className="flex-[2] flex-row flex-wrap gap-2">
-                {FREQUENCY_UNITS.map((u) => (
+            <SectionTitle icon={Type} title="Identity" />
+            <View className="space-y-4">
+              <TextInput
+                className="bg-white dark:bg-zinc-900 rounded-3xl px-6 py-5 text-lg text-zinc-900 dark:text-white border border-zinc-200 dark:border-zinc-800 font-inter-semibold shadow-sm"
+                value={name}
+                onChangeText={(t) => { setError(null); setName(t); }}
+                placeholder="Category Name (e.g. Salary)"
+                placeholderTextColor={isDark ? '#3f3f46' : '#d4d4d8'}
+                autoFocus
+              />
+              <View className="flex-row flex-wrap gap-2.5">
+                {TYPES.map((t) => (
                   <Pressable
-                    key={u.value}
-                    className={`px-3 py-2 rounded-lg border ${frequencyUnit === u.value ? 'bg-sky-50 dark:bg-sky-900/30 border-sky-600 dark:border-sky-400' : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800'}`}
-                    onPress={() => setFrequencyUnit(u.value)}
+                    key={t.value}
+                    className={`px-5 py-3.5 rounded-2xl border ${type === t.value ? 'bg-violet-600 border-violet-600 shadow-md shadow-violet-600/30' : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800'}`}
+                    onPress={() => setType(t.value)}
                   >
-                    <Text className={`text-[10px] ${frequencyUnit === u.value ? 'text-sky-600 dark:text-sky-400 font-inter-semibold' : 'text-zinc-500 dark:text-zinc-400'}`}>{u.label}</Text>
+                    <Text className={`text-[13px] ${type === t.value ? 'text-white font-inter-bold' : 'text-zinc-500 dark:text-zinc-400 font-inter-medium'}`}>{t.label}</Text>
                   </Pressable>
                 ))}
               </View>
+              <Text className="text-[12px] text-zinc-400 dark:text-zinc-500 ml-1 font-inter-medium italic leading-relaxed">
+                {TYPE_DESCRIPTIONS[type]}
+              </Text>
             </View>
           </View>
-        )}
 
-        {/* Active Period - Hide for Assets */}
-        {type !== 'asset' && (
+          {/* Logic Section */}
           <View>
-            <Text className="text-[10px] font-inter-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-3 ml-1">Active Period (Optional)</Text>
+            <SectionTitle icon={Layers} title="Component Logic" />
+            
+            {/* Asset Logic */}
+            {type === 'asset' && (
+              <View className="space-y-4">
+                <Pressable 
+                  className={`flex-row items-center p-5 rounded-3xl border ${isLiquid ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-500/30' : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800'}`} 
+                  onPress={() => setIsLiquid(!isLiquid)}
+                >
+                  <View className="flex-1">
+                    <Text className="text-base font-inter-bold text-zinc-800 dark:text-zinc-200">Liquid Asset</Text>
+                    <Text className="text-[11px] text-zinc-400 mt-0.5 uppercase tracking-wider font-inter-medium">Cash, Bank, MM</Text>
+                  </View>
+                  <View className={`w-7 h-7 rounded-lg items-center justify-center ${isLiquid ? 'bg-emerald-500 shadow-md' : 'border-2 border-zinc-200 dark:border-zinc-800'}`}>
+                    {isLiquid && <Text className="text-white text-xs font-bold">✓</Text>}
+                  </View>
+                </Pressable>
+                <View className="bg-white dark:bg-zinc-900 rounded-3xl p-5 border border-zinc-200 dark:border-zinc-800">
+                  <Text className="text-[10px] font-inter-bold text-zinc-400 uppercase tracking-wider mb-2">Growth / Depr (%)</Text>
+                  <TextInput
+                    className="text-xl text-zinc-900 dark:text-white font-mono-bold"
+                    value={depRate}
+                    onChangeText={setDepRate}
+                    keyboardType="numbers-and-punctuation"
+                    placeholder="0"
+                    placeholderTextColor={isDark ? '#3f3f46' : '#d4d4d8'}
+                  />
+                </View>
+              </View>
+            )}
+
+            {/* Liability Logic */}
+            {type === 'liability' && (
+              <View className="space-y-4">
+                <Pressable 
+                  className={`flex-row items-center p-5 rounded-3xl border ${isShortTerm ? 'bg-rose-50 dark:bg-rose-500/10 border-rose-500/30' : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800'}`} 
+                  onPress={() => setIsShortTerm(!isShortTerm)}
+                >
+                  <View className="flex-1">
+                    <Text className="text-base font-inter-bold text-zinc-800 dark:text-zinc-200">Short-term Debt</Text>
+                    <Text className="text-[11px] text-zinc-400 mt-0.5 uppercase tracking-wider font-inter-medium">Credit Cards, Paylater</Text>
+                  </View>
+                  <View className={`w-7 h-7 rounded-lg items-center justify-center ${isShortTerm ? 'bg-rose-500 shadow-md' : 'border-2 border-zinc-200 dark:border-zinc-800'}`}>
+                    {isShortTerm && <Text className="text-white text-xs font-bold">✓</Text>}
+                  </View>
+                </Pressable>
+                <View className="bg-white dark:bg-zinc-900 rounded-3xl p-5 border border-zinc-200 dark:border-zinc-800">
+                  <Text className="text-[10px] font-inter-bold text-zinc-400 uppercase tracking-wider mb-2">Monthly Payment (Cicilan)</Text>
+                  <View className="flex-row items-center">
+                    <Text className="text-lg text-zinc-400 font-inter-bold mr-2">Rp</Text>
+                    <TextInput
+                      className="flex-1 text-2xl text-zinc-900 dark:text-white font-mono-bold"
+                      value={monthlyInstallment}
+                      onChangeText={(text) => setMonthlyInstallment(formatDisplayNumber(text))}
+                      keyboardType="numeric"
+                      placeholder="0"
+                      placeholderTextColor={isDark ? '#3f3f46' : '#d4d4d8'}
+                    />
+                  </View>
+                </View>
+              </View>
+            )}
+
+            {/* Frequency Logic */}
+            {(type === 'income' || type === 'expense') && (
+              <View className="space-y-4">
+                {type === 'expense' && (
+                  <Pressable 
+                    className={`flex-row items-center p-5 rounded-3xl border ${isEssential ? 'bg-amber-50 dark:bg-amber-500/10 border-amber-500/30' : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800'}`} 
+                    onPress={() => setIsEssential(!isEssential)}
+                  >
+                    <View className="flex-1">
+                      <Text className="text-base font-inter-bold text-zinc-800 dark:text-zinc-200">Essential Expense</Text>
+                      <Text className="text-[11px] text-zinc-400 mt-0.5 uppercase tracking-wider font-inter-medium">Rent, Food, Basic Health</Text>
+                    </View>
+                    <View className={`w-7 h-7 rounded-lg items-center justify-center ${isEssential ? 'bg-amber-500 shadow-md' : 'border-2 border-zinc-200 dark:border-zinc-800'}`}>
+                      {isEssential && <Text className="text-zinc-900 text-xs font-bold">✓</Text>}
+                    </View>
+                  </Pressable>
+                )}
+                <View className="flex-row gap-4">
+                  <View className="flex-1 bg-white dark:bg-zinc-900 rounded-3xl p-5 border border-zinc-200 dark:border-zinc-800">
+                    <Text className="text-[10px] font-inter-bold text-zinc-400 uppercase tracking-wider mb-2">Every</Text>
+                    <TextInput
+                      className="text-2xl text-zinc-900 dark:text-white font-mono-bold"
+                      value={frequencyInterval}
+                      onChangeText={setFrequencyInterval}
+                      keyboardType="numeric"
+                      placeholder="1"
+                      placeholderTextColor={isDark ? '#3f3f46' : '#d4d4d8'}
+                    />
+                  </View>
+                  <View className="flex-[2] flex-row flex-wrap gap-2 items-center justify-center bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 p-2">
+                    {FREQUENCY_UNITS.map((u) => (
+                      <Pressable
+                        key={u.value}
+                        className={`w-10 h-10 rounded-full items-center justify-center border ${frequencyUnit === u.value ? 'bg-violet-600 border-violet-600' : 'bg-transparent border-zinc-100 dark:border-zinc-800'}`}
+                        onPress={() => setFrequencyUnit(u.value)}
+                      >
+                        <Text className={`text-[11px] font-inter-bold ${frequencyUnit === u.value ? 'text-white' : 'text-zinc-400'}`}>{u.label}</Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                </View>
+              </View>
+            )}
+          </View>
+
+          {/* Date Range Section */}
+          <View>
+            <SectionTitle icon={Calendar} title="Temporal Range" />
             <View className="flex-row gap-4">
-              <View className="flex-1">
+              <View className="flex-1 bg-white dark:bg-zinc-900 rounded-3xl p-5 border border-zinc-200 dark:border-zinc-800">
+                <Text className="text-[10px] font-inter-bold text-zinc-400 uppercase tracking-wider mb-2">Start Date</Text>
                 <TextInput
-                  className="bg-white dark:bg-zinc-900 rounded-2xl px-5 py-3 text-sm text-zinc-900 dark:text-zinc-50 border border-zinc-200 dark:border-zinc-800 font-mono"
+                  className="text-[13px] text-zinc-900 dark:text-white font-mono-bold"
                   value={activeFrom}
                   onChangeText={setActiveFrom}
-                  placeholder="Start (YYYY-MM-DD)"
-                  placeholderTextColor="#94a3b8"
+                  placeholder="YYYY-MM-DD"
+                  placeholderTextColor={isDark ? '#3f3f46' : '#d4d4d8'}
                 />
               </View>
-              <View className="flex-1">
+              <View className="flex-1 bg-white dark:bg-zinc-900 rounded-3xl p-5 border border-zinc-200 dark:border-zinc-800">
+                <Text className="text-[10px] font-inter-bold text-zinc-400 uppercase tracking-wider mb-2">End Date (Opt)</Text>
                 <TextInput
-                  className="bg-white dark:bg-zinc-900 rounded-2xl px-5 py-3 text-sm text-zinc-900 dark:text-zinc-50 border border-zinc-200 dark:border-zinc-800 font-mono"
+                  className="text-[13px] text-zinc-900 dark:text-white font-mono-bold"
                   value={activeUntil}
                   onChangeText={setActiveUntil}
-                  placeholder="End (YYYY-MM-DD)"
-                  placeholderTextColor="#94a3b8"
+                  placeholder="YYYY-MM-DD"
+                  placeholderTextColor={isDark ? '#3f3f46' : '#d4d4d8'}
                 />
               </View>
             </View>
           </View>
-        )}
 
-        {/* Dynamic Fields */}
-        {type === 'asset' && (
-          <View className="gap-y-4">
+          {error && <Text className="text-rose-500 text-sm font-inter-bold text-center">{error}</Text>}
+
+          {/* Actions */}
+          <View className="flex-row space-x-4">
             <Pressable 
-              className="flex-row items-center gap-x-3 bg-white dark:bg-zinc-900 p-5 rounded-2xl border border-zinc-200 dark:border-zinc-800" 
-              onPress={() => setIsLiquid(!isLiquid)}
+              className="flex-1 bg-zinc-100 dark:bg-zinc-800 py-5 rounded-[24px] items-center active:opacity-70" 
+              onPress={onCancel}
             >
-              <View className={`w-6 h-6 rounded-md border-2 items-center justify-center ${isLiquid ? 'bg-emerald-500 border-emerald-500' : 'border-zinc-300 dark:border-zinc-700'}`}>
-                {isLiquid && <Text className="text-white text-xs font-bold">✓</Text>}
-              </View>
-              <View className="ml-3">
-                <Text className="text-sm font-inter-semibold text-zinc-900 dark:text-zinc-50">Liquid Asset</Text>
-                <Text className="text-[10px] text-zinc-400">Cash, Bank, Money Market</Text>
-              </View>
+              <Text className="text-zinc-500 dark:text-zinc-400 font-inter-bold text-base">Cancel</Text>
             </Pressable>
-            
-            <View>
-              <Text className="text-[10px] font-inter-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2 ml-1">Annual Growth / Loss (%)</Text>
-              <TextInput
-                className="bg-white dark:bg-zinc-900 rounded-2xl px-5 py-3 text-base text-zinc-900 dark:text-zinc-50 border border-zinc-200 dark:border-zinc-800 font-mono"
-                value={depRate}
-                onChangeText={setDepRate}
-                keyboardType="numbers-and-punctuation"
-                placeholder="Contoh: 5 (Naik) atau -10 (Turun)"
-                placeholderTextColor="#94a3b8"
-              />
-              <Text className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-2 ml-1 italic">
-                Positif (+) untuk kenaikan (Emas/Rumah), Negatif (-) untuk penyusutan (Mobil).
-              </Text>
-            </View>
-          </View>
-        )}
-
-        {type === 'liability' && (
-          <View className="space-y-4">
             <Pressable 
-              className="flex-row items-center gap-x-3 bg-white dark:bg-zinc-900 p-5 rounded-2xl border border-zinc-200 dark:border-zinc-800" 
-              onPress={() => setIsShortTerm(!isShortTerm)}
+              className="flex-[2] py-5 rounded-[24px] items-center ml-4 active:opacity-80 shadow-lg shadow-[#FFBF00]/30" 
+              style={{ backgroundColor: '#FFBF00' }}
+              onPress={handleSave}
             >
-              <View className={`w-6 h-6 rounded-md border-2 items-center justify-center ${isShortTerm ? 'bg-rose-500 border-rose-500' : 'border-zinc-300 dark:border-zinc-700'}`}>
-                {isShortTerm && <Text className="text-white text-xs font-bold">✓</Text>}
-              </View>
-              <View className="ml-3">
-                <Text className="text-sm font-inter-semibold text-zinc-900 dark:text-zinc-50">Short-term Liability</Text>
-                <Text className="text-[10px] text-zinc-400">Credit Card, Paylater</Text>
-              </View>
+              <Text className="text-zinc-900 font-inter-bold text-base">{isEditing ? 'Update' : 'Create'}</Text>
             </Pressable>
-
-            <View>
-              <Text className="text-[10px] font-inter-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2 ml-1">Monthly Installment (Cicilan)</Text>
-              <View className="flex-row items-center bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 px-4">
-                <Text className="text-sm text-zinc-400 font-inter-bold mr-2">Rp</Text>
-                <TextInput
-                  className="flex-1 text-base font-mono-bold text-zinc-900 dark:text-zinc-50 py-4"
-                  value={monthlyInstallment}
-                  onChangeText={(text) => setMonthlyInstallment(formatDisplayNumber(text))}
-                  keyboardType="numeric"
-                  placeholder="0"
-                  placeholderTextColor="#94a3b8"
-                />
-              </View>
-              <Text className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-2 ml-1 italic">
-                Digunakan untuk perhitungan DSR (Debt Service Ratio).
-              </Text>
-            </View>
           </View>
-        )}
-
-        {error && <Text className="text-rose-500 text-sm font-inter-medium mt-2 text-center">{error}</Text>}
-
-        {/* Actions */}
-        <View className="flex-row gap-x-4 mt-8 pb-10">
-          <Pressable className="flex-1 bg-zinc-200 dark:bg-zinc-800 py-4 rounded-2xl items-center active:opacity-70" onPress={onCancel}>
-            <Text className="text-zinc-600 dark:text-zinc-300 font-inter-bold text-base">Cancel</Text>
-          </Pressable>
-          <Pressable className="flex-[2] bg-sky-600 dark:bg-sky-500 py-4 rounded-2xl items-center active:opacity-70 shadow-lg shadow-sky-600/30" onPress={handleSave}>
-            <Text className="text-white dark:text-zinc-950 font-inter-bold text-base">{isEditing ? 'Update' : 'Create'}</Text>
-          </Pressable>
         </View>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }

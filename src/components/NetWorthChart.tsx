@@ -1,10 +1,6 @@
-/**
- * NetWorthChart — Custom SVG line chart with gradient fill.
- * Uses react-native-svg. Supports touch scrubbing on web/native.
- */
 import React, { useState, useCallback } from 'react';
-import { View, Text, LayoutChangeEvent, useColorScheme } from 'react-native';
-import Svg, { Path, Defs, LinearGradient, Stop, Circle, Line, Rect } from 'react-native-svg';
+import { View, Text, LayoutChangeEvent } from 'react-native';
+import Svg, { Path, Defs, LinearGradient, Stop, Circle, Line } from 'react-native-svg';
 
 interface DataPoint {
   date: string;
@@ -28,9 +24,6 @@ function formatDate(d: string): string {
   return date.toLocaleDateString('id-ID', { month: 'short', day: 'numeric' });
 }
 
-/**
- * Build a linear SVG path from data points.
- */
 function buildPath(
   points: { x: number; y: number }[],
   close: boolean,
@@ -56,7 +49,6 @@ function buildPath(
 export function NetWorthChart({ data, height = 200 }: NetWorthChartProps) {
   const [containerWidth, setContainerWidth] = useState(0);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
-  const isDark = useColorScheme() === 'dark';
 
   const onLayout = useCallback((e: LayoutChangeEvent) => {
     setContainerWidth(e.nativeEvent.layout.width);
@@ -64,14 +56,14 @@ export function NetWorthChart({ data, height = 200 }: NetWorthChartProps) {
 
   if (data.length === 0) {
     return (
-      <View className="bg-white dark:bg-zinc-900 rounded-2xl p-10 items-center justify-center border border-zinc-200 dark:border-zinc-800" style={{ height }}>
-        <Text className="text-sm text-zinc-400 dark:text-zinc-500 text-center">No data yet. Calibrate your balances to see trends.</Text>
+      <View className="items-center justify-center" style={{ height }}>
+        <Text className="text-sm text-white/20 text-center font-inter-medium">No trend data available yet.</Text>
       </View>
     );
   }
 
-  const padX = 8;
-  const padY = 20;
+  const padX = 10;
+  const padY = 30;
   const chartW = Math.max(containerWidth - padX * 2, 100);
   const chartH = height - padY * 2;
 
@@ -105,62 +97,53 @@ export function NetWorthChart({ data, height = 200 }: NetWorthChartProps) {
     setActiveIndex(closest);
   };
 
-  const latestValue = data[data.length - 1].value;
-  const firstValue = data[0].value;
-  const isUp = latestValue >= firstValue;
-  const trendColor = isUp ? (isDark ? '#34d399' : '#059669') : (isDark ? '#fb7185' : '#e11d48');
+  const trendColor = '#8b5cf6'; // Violet 500 — FinTech theme
 
   return (
     <View 
-      className="bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800" 
+      className="overflow-hidden" 
       onLayout={onLayout}
       onTouchStart={(e) => handleTouch({ nativeEvent: { locationX: e.nativeEvent.locationX } })}
       onTouchMove={(e) => handleTouch({ nativeEvent: { locationX: e.nativeEvent.locationX } })}
+      onTouchEnd={() => setActiveIndex(null)}
     >
-      {/* Scrub tooltip */}
+      {/* Tooltip Overlay */}
       {active && activePoint && (
         <View 
-          className="absolute top-1 z-10 bg-zinc-100 dark:bg-zinc-800 rounded px-2 py-1 border border-zinc-200 dark:border-zinc-700"
-          style={{ left: Math.min(Math.max(0, activePoint.x - 50), containerWidth - 100) }}
+          className="absolute top-4 z-10 bg-white dark:bg-zinc-800 rounded-2xl px-4 py-2 border border-zinc-200 dark:border-zinc-700"
+          style={{ 
+            left: Math.min(Math.max(padX, activePoint.x - 60), containerWidth - 130),
+            shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 8, elevation: 4,
+          }}
         >
-          <Text className="text-sky-600 dark:text-sky-400 text-[11px] font-mono-bold">{formatCurrency(active.value)}</Text>
-          <Text className="text-zinc-400 dark:text-zinc-500 text-[9px]">{formatDate(active.date)}</Text>
+          <Text className="text-zinc-900 dark:text-white font-mono-bold text-xs">{formatCurrency(active.value)}</Text>
+          <Text className="text-zinc-400 text-[9px] uppercase tracking-wider mt-0.5">{formatDate(active.date)}</Text>
         </View>
       )}
 
       {containerWidth > 0 && (
         <Svg width={containerWidth} height={height}>
           <Defs>
-            <LinearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+            <LinearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
               <Stop offset="0" stopColor={trendColor} stopOpacity="0.3" />
               <Stop offset="1" stopColor={trendColor} stopOpacity="0" />
             </LinearGradient>
           </Defs>
 
-          {/* Area fill */}
-          <Path d={areaPath} fill="url(#areaGrad)" />
+          <Path d={areaPath} fill="url(#chartGrad)" />
+          <Path d={linePath} stroke={trendColor} strokeWidth={3} fill="none" strokeLinecap="round" strokeLinejoin="round" />
 
-          {/* Line */}
-          <Path d={linePath} stroke={trendColor} strokeWidth={2} fill="none" strokeLinecap="round" />
-
-          {/* Active indicator */}
           {activePoint && (
             <>
               <Line
                 x1={activePoint.x} y1={padY}
                 x2={activePoint.x} y2={chartH + padY}
-                stroke={isDark ? '#71717a' : '#d4d4d8'} strokeWidth={1} strokeDasharray="4,4" opacity={0.5}
+                stroke="#a78bfa" strokeWidth={1} strokeDasharray="5,5" opacity={0.3}
               />
-              <Circle cx={activePoint.x} cy={activePoint.y} r={4} fill={trendColor} />
-              <Circle cx={activePoint.x} cy={activePoint.y} r={8} fill={trendColor} opacity={0.2} />
+              <Circle cx={activePoint.x} cy={activePoint.y} r={5} fill="#7c3aed" />
+              <Circle cx={activePoint.x} cy={activePoint.y} r={12} fill={trendColor} opacity={0.3} />
             </>
           )}
-
-          {/* Transparent area background (no longer used for events to avoid web warnings) */}
-          <Rect
-            x={0} y={0} width={containerWidth} height={height}
-            fill="transparent"
-          />
         </Svg>
       )}
     </View>

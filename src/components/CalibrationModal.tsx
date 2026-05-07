@@ -68,7 +68,7 @@ export function CalibrationModalContent({ onComplete, onCancel }: CalibrationMod
         {/* Header */}
         <View className="mb-6">
           <Text className="text-2xl font-inter-bold text-zinc-900 dark:text-zinc-50">Calibrate Balance</Text>
-          <Text className="text-base text-sky-600 dark:text-sky-400 font-inter-medium mt-1">{target.name}</Text>
+          <Text className="text-base text-violet-600 dark:text-violet-400 font-inter-medium mt-1">{target.name}</Text>
         </View>
 
         {/* Current Value */}
@@ -80,14 +80,14 @@ export function CalibrationModalContent({ onComplete, onCancel }: CalibrationMod
         {/* Divider */}
         <View className="flex-row items-center my-6">
           <View className="flex-1 h-[1px] bg-zinc-200 dark:bg-zinc-800" />
-          <Text className="mx-4 text-sky-500 text-lg">↓</Text>
+          <Text className="mx-4 text-violet-500 text-lg">↓</Text>
           <View className="flex-1 h-[1px] bg-zinc-200 dark:bg-zinc-800" />
         </View>
 
         {/* New Value Input */}
         <View className="mb-8">
           <Text className="text-[10px] font-inter-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2 ml-1">New Value</Text>
-          <View className="flex-row items-center bg-white dark:bg-zinc-900 rounded-2xl border-2 border-sky-600/50 dark:border-sky-400/30 px-4">
+          <View className="flex-row items-center bg-white dark:bg-zinc-900 rounded-2xl border-2 border-violet-600/50 dark:border-violet-400/30 px-4">
             <Text className="text-xl text-zinc-400 font-inter-bold mr-2">Rp</Text>
             <TextInput
               className="flex-1 text-2xl font-mono-bold text-zinc-900 dark:text-zinc-50 py-4"
@@ -115,7 +115,7 @@ export function CalibrationModalContent({ onComplete, onCancel }: CalibrationMod
             <Text className="text-zinc-600 dark:text-zinc-300 font-inter-bold text-base">Cancel</Text>
           </Pressable>
           <Pressable
-            className="flex-[2] bg-sky-600 dark:bg-sky-500 py-4 rounded-xl items-center ml-4 active:opacity-70"
+            className="flex-[2] bg-violet-600 py-4 rounded-xl items-center ml-4 active:opacity-70"
             onPress={handleSubmit}
             disabled={isCalibrating}
           >

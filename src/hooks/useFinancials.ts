@@ -36,7 +36,7 @@ export interface FinancialSummary {
   totalIncome: number;
   totalExpenses: number;
   totalMonthlyAssets: number; // Monthly growth/interest
-  totalMonthlyLiabilities: number; // Monthly installments
+  totalMonthlyInstallment: number; // Monthly installments
   totalMonthlyOutflow: number; // Expenses + Installments
   liquidAssets: number;
   shortTermLiabilities: number;
@@ -46,6 +46,8 @@ export interface FinancialSummary {
 export interface NetWorthPoint {
   date: string;
   value: number;
+  income?: number;
+  expense?: number;
 }
 
 export interface UseFinancialsReturn {
@@ -56,6 +58,7 @@ export interface UseFinancialsReturn {
   alerts: { type: 'red' | 'yellow'; message: string; suggestion: string }[];
   isNetWorthDeclining: boolean;
   refetch: () => Promise<void>;
+  deleteComponent: (id: number) => Promise<void>;
 }
 
 function normalizeToMonthly(amount: number, interval: number, unit: string): number {
@@ -77,7 +80,7 @@ function computeSummary(components: ComponentWithBalance[]): FinancialSummary {
   let liquidAssets = 0;
   let shortTermLiabilities = 0;
   let totalMonthlyAssets = 0;
-  let totalMonthlyLiabilities = 0;
+  let totalMonthlyInstallment = 0;
 
   const now = new Date();
   const todayStr = now.toISOString().split('T')[0];
@@ -108,7 +111,7 @@ function computeSummary(components: ComponentWithBalance[]): FinancialSummary {
           shortTermLiabilities += comp.current_amount;
         }
         // Use monthly_installment for DSR, not the total balance
-        totalMonthlyLiabilities += comp.monthly_installment;
+        totalMonthlyInstallment += comp.monthly_installment;
         break;
       case 'income':
         totalIncome += monthlyAmount;
@@ -122,9 +125,9 @@ function computeSummary(components: ComponentWithBalance[]): FinancialSummary {
   const netWorth = totalAssets - totalLiabilities;
   const liquidNetWorth = liquidAssets - shortTermLiabilities;
   const savingsRate = totalIncome > 0 ? (totalIncome - totalExpenses) / totalIncome : 0;
-  const dsr = totalIncome > 0 ? totalMonthlyLiabilities / totalIncome : 0;
+  const dsr = totalIncome > 0 ? totalMonthlyInstallment / totalIncome : 0;
   const debtToAssetRatio = totalAssets > 0 ? totalLiabilities / totalAssets : 0;
-  const totalMonthlyOutflow = totalExpenses + totalMonthlyLiabilities;
+  const totalMonthlyOutflow = totalExpenses + totalMonthlyInstallment;
 
   return {
     netWorth,
@@ -137,7 +140,7 @@ function computeSummary(components: ComponentWithBalance[]): FinancialSummary {
     totalIncome,
     totalExpenses,
     totalMonthlyAssets,
-    totalMonthlyLiabilities,
+    totalMonthlyInstallment,
     totalMonthlyOutflow,
     liquidAssets,
     shortTermLiabilities,
@@ -193,6 +196,8 @@ export function useFinancials(): UseFinancialsReturn {
         snapshot_date: string;
         asset_total: number;
         liability_total: number;
+        income_total: number;
+        expense_total: number;
       }>(`
         WITH record_events AS (
           SELECT
@@ -229,7 +234,27 @@ export function useFinancials(): UseFinancialsReturn {
                   AND (fr.end_date IS NULL OR date(fr.end_date) > dd.event_date)
                 LIMIT 1
               ) ELSE 0 END
-            ), 0) as liability_total
+            ), 0) as liability_total,
+            COALESCE(SUM(
+              CASE WHEN c.type = 'income'
+              THEN (
+                SELECT fr.amount FROM financial_records fr
+                WHERE fr.component_id = c.id
+                  AND date(fr.start_date) <= dd.event_date
+                  AND (fr.end_date IS NULL OR date(fr.end_date) > dd.event_date)
+                LIMIT 1
+              ) ELSE 0 END
+            ), 0) as income_total,
+            COALESCE(SUM(
+              CASE WHEN c.type = 'expense'
+              THEN (
+                SELECT fr.amount FROM financial_records fr
+                WHERE fr.component_id = c.id
+                  AND date(fr.start_date) <= dd.event_date
+                  AND (fr.end_date IS NULL OR date(fr.end_date) > dd.event_date)
+                LIMIT 1
+              ) ELSE 0 END
+            ), 0) as expense_total
           FROM distinct_dates dd
           CROSS JOIN financial_components c
           GROUP BY dd.event_date
@@ -240,6 +265,8 @@ export function useFinancials(): UseFinancialsReturn {
       const history: NetWorthPoint[] = historyRows.map(row => ({
         date: row.snapshot_date,
         value: row.asset_total - row.liability_total,
+        income: row.income_total,
+        expense: row.expense_total,
       }));
 
       setNetWorthHistory(history);
@@ -357,6 +384,15 @@ export function useFinancials(): UseFinancialsReturn {
 
   summary.educationReserve = educationReserve;
 
+  const deleteComponent = useCallback(async (id: number) => {
+    try {
+      await db.runAsync('DELETE FROM financial_components WHERE id = ?', [id]);
+      await fetchData();
+    } catch (e) {
+      console.error('Error deleting component:', e);
+    }
+  }, [db, fetchData]);
+
   return {
     isLoading,
     summary,
@@ -365,5 +401,6 @@ export function useFinancials(): UseFinancialsReturn {
     alerts,
     isNetWorthDeclining,
     refetch: fetchData,
+    deleteComponent,
   };
 }

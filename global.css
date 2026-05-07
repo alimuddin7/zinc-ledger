@@ -6,6 +6,10 @@
   .font-inter {
     font-family: Inter;
   }
+  .font-inter-medium {
+    font-family: Inter;
+    font-weight: 500;
+  }
   .font-inter-semibold {
     font-family: InterSemiBold;
   }

@@ -1,6 +1,6 @@
 # 💎 Zinc Ledger
 
-**Zinc Ledger** adalah aplikasi manajemen keuangan pribadi yang modern, aman, dan cerdas. Dibangun dengan fokus pada **Offline-First**, aplikasi ini memungkinkan Anda melacak Kekayaan Bersih (Net Worth), kesehatan arus kas, dan rasio finansial secara real-time tanpa bergantung pada server ekspor.
+**Zinc Ledger** adalah aplikasi manajemen keuangan pribadi yang modern, aman, dan cerdas. Dibangun dengan fokus pada **Offline-First**, aplikasi ini memungkinkan Anda melacak Kekayaan Bersih (Net Worth), kesehatan arus kas, dan rasio finansial secara real-time tanpa bergantung pada server eksternal.
 
 ![Modern Adaptive UI](https://img.shields.io/badge/UI-Adaptive_Zinc-black?style=for-the-badge)
 ![Expo](https://img.shields.io/badge/Platform-Expo_SDK_51-blue?style=for-the-badge)
@@ -8,31 +8,36 @@
 
 ---
 
-## 🚀 Fitur Utama
+## 🚀 Fitur Utama (Terbaru)
 
-### 📊 Dashboard Cerdas
-- **Net Worth Monitoring**: Lacak aset liquid (cash, bank) dan non-liquid (properti, kendaraan).
-- **Temporal Appreciation/Depreciation**: Aset Anda "hidup". Emas dan rumah akan naik nilainya secara otomatis, sementara kendaraan akan menyusut secara otomatis berdasarkan target tahunan.
-- **Dynamic DSR (Debt Service Ratio)**: Monitor apakah beban hutang Anda sudah melampaui batas aman (35%) secara real-time.
+### 📊 Dashboard "Weather App" Aesthetic
+- **Immersive Hero Card**: Tampilan saldo utama dengan gradasi dinamis dan efek glassmorphism.
+- **Adaptive Theming**: Mendukung Dark/Light mode secara otomatis mengikuti sistem OS.
+- **Micro-Animations**: Transisi halus antar elemen untuk pengalaman pengguna yang premium.
 
-### 🧠 Financial Brain & Health Check
-- **Emergency Fund Target**: Kalkulasi otomatis target dana darurat berdasarkan status (Single/Married) dan jumlah anak.
-- **Savings Rate Tracker**: Pastikan pengeluaran Anda tidak lebih besar dari pendapatan.
-- **Predictive Alerts**: Peringatan dini jika cicilan di masa depan akan membuat keuangan Anda tidak sehat.
-- **Saran Actionable**: Setiap peringatan dilengkapi dengan saran praktis untuk memperbaiki kondisi finansial Anda.
+### 🧪 Sandbox: Financial Simulator (New)
+- **What-If Scenarios**: Simulasikan pembelian aset besar (Mobil, Properti) tanpa mengubah data asli.
+- **Loan Projection**: Masukkan harga aset, tenor (bulan), dan bunga (% p.a) untuk melihat estimasi cicilan bulanan.
+- **DSR Impact Analysis**: Lihat secara instan bagaimana hutang baru akan mempengaruhi Debt Service Ratio Anda sebelum Anda mengambil keputusan.
 
-### 🛡️ Data & Privasi
-- **100% Local**: Data Anda disimpan di database SQLite lokal perangkat Anda. Tidak ada data yang dikirim ke server pihak ketiga.
-- **Temporal Integrity**: Menggunakan pola *Close-and-Insert*. Sejarah perubahan saldo Anda tersimpan dengan rapi tanpa menghapus data lama.
+### 🛡️ Crisis Simulator (Stress Test)
+- **Survival Countdown**: Hitung berapa hari Anda bisa bertahan hidup secara finansial jika pendapatan berhenti total hari ini.
+- **Essential vs Lifestyle**: Membedakan pengeluaran wajib (Essential) dan keinginan untuk akurasi dana darurat yang lebih tinggi.
+- **Fire-Sale Projection**: Simulasi likuidasi aset non-liquid (emas, kendaraan) dengan diskon 20% untuk melihat daya tahan krisis maksimal.
+
+### 🧠 Intelligence & Insights
+- **Lifestyle Inflation Detection**: Mendeteksi jika pertumbuhan pengeluaran Anda lebih cepat daripada pertumbuhan pendapatan.
+- **Education Reserve**: Kalkulasi otomatis biaya pendidikan anak di masa depan dengan inflasi pendidikan 10% per tahun.
+- **Predictive Alerts**: Peringatan dini jika rasio DSR, Savings Rate, atau Dana Darurat berada di zona merah.
 
 ---
 
 ## 🛠️ Tech Stack
 
-- **Frontend**: React Native, Expo Router.
+- **Frontend**: React Native (Expo SDK 51), Expo Router.
 - **Styling**: NativeWind (Tailwind CSS for React Native).
-- **Persistence**: `expo-sqlite` dengan sistem migrasi otomatis.
-- **State Management**: Zustand (untuk UI state & optimistic updates).
+- **Persistence**: `expo-sqlite` dengan sistem migrasi otomatis (Schema V6).
+- **State Management**: Zustand (UI state, Optimistic UI, & Simulation Sandbox).
 - **Icons**: Lucide React Native.
 
 ---
@@ -63,15 +68,16 @@
 
 ---
 
-## 📐 Aturan Finansial (Financial Rules)
+## 📐 Aturan Finansial (Financial Brain Rules)
 
-Aplikasi ini mengikuti standar perencanaan keuangan modern:
-- **DSR Max**: 35% dari pendapatan bulanan.
-- **Savings Rate Min**: 10-15% (bergantung status).
-- **Dana Darurat**: 
-  - Single: 6x pengeluaran.
-  - Married: 9x pengeluaran.
-  - Married + Kids: (12 + jumlah anak)x pengeluaran.
+Aplikasi ini mengadopsi standar perencanaan keuangan ketat:
+- **DSR Max**: 35% (Hutang bulanan / Total Pendapatan).
+- **Savings Rate Min**: 15% (Married) | 10% (Single).
+- **Aset Depresiasi**: Kendaraan menyusut 10% per tahun secara otomatis.
+- **Dana Darurat (EF)**: 
+  - Single: 6x Total Pengeluaran.
+  - Married: 9x Total Pengeluaran.
+  - Married + Kids: (12 + jumlah anak)x Total Pengeluaran.
 
 ---
 

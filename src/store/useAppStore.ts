@@ -30,6 +30,18 @@ interface AppState {
   optimisticBalances: Record<number, number>;
   setOptimisticBalance: (componentId: number, amount: number) => void;
   clearOptimisticBalance: (componentId: number) => void;
+
+  // Simulation State (Global)
+  isSimActive: boolean;
+  simPurchase: number;
+  simType: 'cash' | 'debt';
+  simTenor: number;
+  simRate: number;
+  setSimActive: (active: boolean) => void;
+  setSimPurchase: (amount: number) => void;
+  setSimType: (type: 'cash' | 'debt') => void;
+  setSimTenor: (tenor: number) => void;
+  setSimRate: (rate: number) => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -62,4 +74,16 @@ export const useAppStore = create<AppState>((set) => ({
       delete next[id];
       return { optimisticBalances: next };
     }),
+
+  // Simulation
+  isSimActive: false,
+  simPurchase: 0,
+  simType: 'cash',
+  simTenor: 36,
+  simRate: 10,
+  setSimActive: (isSimActive) => set({ isSimActive }),
+  setSimPurchase: (simPurchase) => set({ simPurchase }),
+  setSimType: (simType) => set({ simType }),
+  setSimTenor: (simTenor) => set({ simTenor }),
+  setSimRate: (simRate) => set({ simRate }),
 }));

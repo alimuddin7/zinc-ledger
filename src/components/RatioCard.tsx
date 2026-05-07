@@ -1,9 +1,10 @@
 /**
- * RatioCard — Glassmorphism financial ratio display card.
- * Color-coded by health status.
+ * RatioCard — Premium metric card with strong contrast.
+ * Uses inline styles for reliability across platforms.
  */
 import React from 'react';
 import { View, Text, Pressable } from 'react-native';
+import { ShieldCheck, TrendingDown, AlertCircle, Zap } from 'lucide-react-native';
 
 interface RatioCardProps {
   label: string;
@@ -13,41 +14,89 @@ interface RatioCardProps {
   onPress?: () => void;
 }
 
-const STATUS_TEXT = {
-  positive: 'text-emerald-600 dark:text-emerald-400',
-  negative: 'text-rose-600 dark:text-rose-400',
-  warning: 'text-amber-600 dark:text-amber-400',
-  neutral: 'text-sky-600 dark:text-sky-400',
-};
-
-const STATUS_BORDER = {
-  positive: 'border-emerald-200 dark:border-emerald-900/50',
-  negative: 'border-rose-200 dark:border-rose-900/50',
-  warning: 'border-amber-200 dark:border-amber-900/50',
-  neutral: 'border-sky-200 dark:border-sky-900/50',
-};
-
-const STATUS_GLOW = {
-  positive: 'bg-emerald-500/10',
-  negative: 'bg-rose-500/10',
-  warning: 'bg-amber-500/10',
-  neutral: 'bg-sky-500/10',
+const STATUS_CONFIG = {
+  positive: {
+    valueColor: '#34d399',
+    bgTint: 'rgba(16, 185, 129, 0.08)',
+    borderTint: 'rgba(16, 185, 129, 0.15)',
+    iconColor: '#34d399',
+    iconBg: 'rgba(16, 185, 129, 0.15)',
+    Icon: ShieldCheck,
+  },
+  negative: {
+    valueColor: '#fb7185',
+    bgTint: 'rgba(244, 63, 94, 0.08)',
+    borderTint: 'rgba(244, 63, 94, 0.15)',
+    iconColor: '#fb7185',
+    iconBg: 'rgba(244, 63, 94, 0.15)',
+    Icon: TrendingDown,
+  },
+  warning: {
+    valueColor: '#fbbf24',
+    bgTint: 'rgba(251, 191, 36, 0.08)',
+    borderTint: 'rgba(251, 191, 36, 0.15)',
+    iconColor: '#fbbf24',
+    iconBg: 'rgba(251, 191, 36, 0.15)',
+    Icon: AlertCircle,
+  },
+  neutral: {
+    valueColor: '#a78bfa',
+    bgTint: 'rgba(139, 92, 246, 0.08)',
+    borderTint: 'rgba(139, 92, 246, 0.15)',
+    iconColor: '#a78bfa',
+    iconBg: 'rgba(139, 92, 246, 0.15)',
+    Icon: Zap,
+  },
 };
 
 export function RatioCard({ label, value, subtitle, status, onPress }: RatioCardProps) {
-  const textColor = STATUS_TEXT[status];
-  const borderColor = STATUS_BORDER[status];
-  const glowBg = STATUS_GLOW[status];
+  const cfg = STATUS_CONFIG[status];
+  const { Icon } = cfg;
 
   return (
     <Pressable
       onPress={onPress}
-      className={`bg-white dark:bg-zinc-900 rounded-2xl p-5 mb-4 border relative overflow-hidden active:opacity-85 active:scale-[0.98] ${borderColor}`}
+      style={{
+        backgroundColor: cfg.bgTint,
+        borderRadius: 20,
+        padding: 18,
+        marginBottom: 12,
+        borderWidth: 1,
+        borderColor: cfg.borderTint,
+        minHeight: 120,
+      }}
     >
-      <View className={`absolute -top-5 -right-5 w-20 h-20 rounded-full opacity-50 ${glowBg}`} />
-      <Text className="text-[10px] font-inter-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">{label}</Text>
-      <Text className={`text-2xl font-mono-bold mt-1 ${textColor}`}>{value}</Text>
-      {subtitle && <Text className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-1">{subtitle}</Text>}
+      <View style={{
+        width: 36, height: 36, borderRadius: 12,
+        backgroundColor: cfg.iconBg,
+        justifyContent: 'center', alignItems: 'center',
+      }}>
+        <Icon size={16} color={cfg.iconColor} />
+      </View>
+
+      <Text style={{
+        fontSize: 22, fontFamily: 'JetBrainsMonoBold',
+        color: cfg.valueColor, marginTop: 12, letterSpacing: -0.5,
+      }}>
+        {value}
+      </Text>
+
+      <Text style={{
+        fontSize: 10, fontFamily: 'InterSemiBold',
+        color: 'rgba(255,255,255,0.35)', marginTop: 4,
+        textTransform: 'uppercase', letterSpacing: 1.5,
+      }}>
+        {label}
+      </Text>
+
+      {subtitle && (
+        <Text style={{
+          fontSize: 10, fontFamily: 'Inter',
+          color: 'rgba(255,255,255,0.2)', marginTop: 2,
+        }}>
+          {subtitle}
+        </Text>
+      )}
     </Pressable>
   );
 }

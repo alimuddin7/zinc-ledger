@@ -34,6 +34,7 @@ export interface FinancialComponent {
   frequency_unit: FrequencyUnit;
   is_liquid: number; // 0 or 1 (SQLite boolean)
   is_short_term: number; // 0 or 1
+  is_essential: number; // 0 or 1
   depreciation_rate: number; // e.g. 0.1 for 10%
   monthly_installment: number; // For liabilities: periodic payment
   active_from: string | null;
