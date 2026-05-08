@@ -11,7 +11,7 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 // Current schema version
-export const SCHEMA_VERSION = 5;
+export const SCHEMA_VERSION = 6;
 
 /**
  * Component types enum for type safety.
@@ -101,6 +101,9 @@ export async function runMigrations(db: SQLiteDatabase): Promise<void> {
   }
   if (currentVersion < 5) {
     await migrateV5(db);
+  }
+  if (currentVersion < 6) {
+    await migrateV6(db);
   }
 }
 
@@ -198,6 +201,16 @@ async function migrateV5(db: SQLiteDatabase): Promise<void> {
   await db.execAsync(`
     ALTER TABLE financial_components ADD COLUMN monthly_installment REAL NOT NULL DEFAULT 0;
     PRAGMA user_version = 5;
+  `);
+}
+
+/**
+ * Migration V6: Essential status for Expenses.
+ */
+async function migrateV6(db: SQLiteDatabase): Promise<void> {
+  await db.execAsync(`
+    ALTER TABLE financial_components ADD COLUMN is_essential INTEGER NOT NULL DEFAULT 0;
+    PRAGMA user_version = 6;
   `);
 }
 

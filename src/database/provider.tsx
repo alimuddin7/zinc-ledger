@@ -6,7 +6,7 @@
  */
 
 import React, { Suspense } from 'react';
-import { ActivityIndicator, View, StyleSheet } from 'react-native';
+import { ActivityIndicator, View, StyleSheet, Platform } from 'react-native';
 import { SQLiteProvider } from 'expo-sqlite';
 import { runMigrations } from './schema';
 import { seedDatabase } from './seed';
@@ -18,8 +18,14 @@ const DB_NAME = 'financial_ledger.db';
  * Initialize DB: run migrations then seed.
  */
 async function initDatabase(db: import('expo-sqlite').SQLiteDatabase) {
-  // Enable WAL mode for better performance
-  await db.execAsync('PRAGMA journal_mode = WAL');
+  // WAL mode is excellent for native, but can cause NoModificationAllowedError on Web (OPFS)
+  if (Platform.OS !== 'web') {
+    await db.execAsync('PRAGMA journal_mode = WAL');
+  } else {
+    // On web, we use a simpler journal mode to avoid locking issues with OPFS
+    await db.execAsync('PRAGMA journal_mode = DELETE');
+  }
+  
   await db.execAsync('PRAGMA foreign_keys = ON');
 
   await runMigrations(db);

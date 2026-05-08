@@ -14,24 +14,25 @@ interface SeedComponent {
   frequency_interval: number;
   frequency_unit: FrequencyUnit;
   is_liquid: number;
+  is_essential: number;
 }
 
 const DEFAULT_COMPONENTS: SeedComponent[] = [
   // Assets — Liquid
-  { name: 'Cash',          type: 'asset',     frequency_interval: 1, frequency_unit: 'month', is_liquid: 1 },
-  { name: 'Bank Account',  type: 'asset',     frequency_interval: 1, frequency_unit: 'month', is_liquid: 1 },
-  { name: 'Investment',    type: 'asset',     frequency_interval: 1, frequency_unit: 'month', is_liquid: 1 },
+  { name: 'Cash',          type: 'asset',     frequency_interval: 1, frequency_unit: 'month', is_liquid: 1, is_essential: 0 },
+  { name: 'Bank Account',  type: 'asset',     frequency_interval: 1, frequency_unit: 'month', is_liquid: 1, is_essential: 0 },
+  { name: 'Investment',    type: 'asset',     frequency_interval: 1, frequency_unit: 'month', is_liquid: 1, is_essential: 0 },
   // Assets — Non-Liquid
-  { name: 'Property',      type: 'asset',     frequency_interval: 1, frequency_unit: 'month', is_liquid: 0 },
+  { name: 'Property',      type: 'asset',     frequency_interval: 1, frequency_unit: 'month', is_liquid: 0, is_essential: 0 },
   // Liabilities
-  { name: 'Credit Card',   type: 'liability', frequency_interval: 1, frequency_unit: 'month', is_liquid: 0 },
-  { name: 'Loan',          type: 'liability', frequency_interval: 1, frequency_unit: 'month', is_liquid: 0 },
+  { name: 'Credit Card',   type: 'liability', frequency_interval: 1, frequency_unit: 'month', is_liquid: 0, is_essential: 0 },
+  { name: 'Loan',          type: 'liability', frequency_interval: 1, frequency_unit: 'month', is_liquid: 0, is_essential: 0 },
   // Income
-  { name: 'Salary',        type: 'income',    frequency_interval: 1, frequency_unit: 'month', is_liquid: 0 },
+  { name: 'Salary',        type: 'income',    frequency_interval: 1, frequency_unit: 'month', is_liquid: 0, is_essential: 0 },
   // Expenses
-  { name: 'Food',          type: 'expense',   frequency_interval: 1, frequency_unit: 'month', is_liquid: 0 },
-  { name: 'Electricity',   type: 'expense',   frequency_interval: 1, frequency_unit: 'month', is_liquid: 0 },
-  { name: 'Transport',     type: 'expense',   frequency_interval: 1, frequency_unit: 'month', is_liquid: 0 },
+  { name: 'Food',          type: 'expense',   frequency_interval: 1, frequency_unit: 'month', is_liquid: 0, is_essential: 1 },
+  { name: 'Electricity',   type: 'expense',   frequency_interval: 1, frequency_unit: 'month', is_liquid: 0, is_essential: 1 },
+  { name: 'Transport',     type: 'expense',   frequency_interval: 1, frequency_unit: 'month', is_liquid: 0, is_essential: 1 },
 ];
 
 /**
@@ -49,9 +50,9 @@ export async function seedDatabase(db: SQLiteDatabase): Promise<void> {
 
   for (const comp of DEFAULT_COMPONENTS) {
     const result = await db.runAsync(
-      `INSERT INTO financial_components (name, type, frequency_interval, frequency_unit, is_liquid)
-       VALUES (?, ?, ?, ?, ?)`,
-      [comp.name, comp.type, comp.frequency_interval, comp.frequency_unit, comp.is_liquid]
+      `INSERT INTO financial_components (name, type, frequency_interval, frequency_unit, is_liquid, is_essential)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [comp.name, comp.type, comp.frequency_interval, comp.frequency_unit, comp.is_liquid, comp.is_essential]
     );
 
     // Create initial record with 0 amount
